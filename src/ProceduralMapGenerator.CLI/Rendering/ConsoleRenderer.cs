@@ -1,5 +1,6 @@
 using ProceduralMapGenerator.Core.Generators;
 using ProceduralMapGenerator.Core.Models;
+using ProceduralMapGenerator.Core.Pathfinding;
 
 namespace ProceduralMapGenerator.CLI.Rendering;
 
@@ -64,6 +65,55 @@ public static class ConsoleRenderer
         Console.Write(glyph);
         Console.ResetColor();
         Console.Write($" {label}");
+    }
+
+    // ── Path overlay rendering ───────────────────────────────────────────────
+
+    public static void RenderWithPath(Map map, List<(int X, int Y)> path)
+    {
+        var pathSet = new HashSet<(int, int)>(path.Select(p => (p.X, p.Y)));
+        (int X, int Y) start = path.Count > 0 ? path[0]  : (-1, -1);
+        (int X, int Y) end   = path.Count > 0 ? path[^1] : (-1, -1);
+
+        for (int y = 0; y < map.Height; y++)
+        {
+            for (int x = 0; x < map.Width; x++)
+            {
+                if (x == start.X && y == start.Y)
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.Write('S');
+                }
+                else if (x == end.X && y == end.Y)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.Write('E');
+                }
+                else if (pathSet.Contains((x, y)))
+                {
+                    Console.ForegroundColor = ConsoleColor.Magenta;
+                    Console.Write('●');
+                }
+                else
+                {
+                    var (glyph, color) = TileStyle[(int)map.GetCell(x, y).Type];
+                    Console.ForegroundColor = color;
+                    Console.Write(glyph);
+                }
+            }
+            Console.WriteLine();
+        }
+
+        Console.ResetColor();
+        PrintLegend();
+        Console.Write("  ");
+        WriteLegendEntry('●', ConsoleColor.Magenta, "Path");
+        Console.Write("  ");
+        WriteLegendEntry('S', ConsoleColor.Green, "Start");
+        Console.Write("  ");
+        WriteLegendEntry('E', ConsoleColor.Red, "End");
+        Console.ResetColor();
+        Console.WriteLine();
     }
 
     // ── Terrain rendering ────────────────────────────────────────────────────
